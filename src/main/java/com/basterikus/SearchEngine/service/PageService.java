@@ -45,7 +45,6 @@ public class PageService implements PageURLService{
     }
 
     public void saveToBase(List<PageDto> pages) {
-//        pageRepository.saveAll(pages);
         for (PageDto page : pages) {
             pageRepository.save(new Page(page.getUrl(), page.getStatusCode(), page.getHtmlCode()));
         }
