@@ -1,6 +1,6 @@
 package com.basterikus.SearchEngine.controller;
 
-import com.basterikus.SearchEngine.service.PageService;
+import com.basterikus.SearchEngine.service.impl.PageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -14,8 +14,13 @@ public class SearchEngineController {
 
     @GetMapping("/pages/{url}")
     public int getPages(@PathVariable String url) {
-        String pageUrl = "https://www." + url + "/";
-        pageService.getAllPages(pageUrl);
+        pageService.getAllPagesFromUrl(url);
+        return 1;
+    }
+
+    @GetMapping("/lemma/{lemma}")
+    public int getLemma(@PathVariable String lemma) {
+        pageService.getLemma(lemma);
         return 1;
     }
 }
