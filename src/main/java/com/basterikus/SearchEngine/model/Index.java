@@ -1,8 +1,6 @@
 package com.basterikus.SearchEngine.model;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import javax.persistence.*;
 
@@ -10,19 +8,23 @@ import javax.persistence.*;
 @NoArgsConstructor
 @Getter
 @Setter
+@Table(name = "word_index")
 public class Index {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private int id;
-    @Column(name = "page_id")
-    private int pageId;
-    @Column(name = "lemma_id")
-    private int lemmaId;
-    private float rank;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+    @ManyToOne
+    @JoinColumn(name = "page_id")
+    private Page page;
+    @ManyToOne
+    @JoinColumn(name = "lemma_id")
+    private Lemma lemma;
+    @Column(name = "word_rank")
+    private Float wordRank;
 
-    public Index(int pageId, int lemmaId, float rank) {
-        this.pageId = pageId;
-        this.lemmaId = lemmaId;
-        this.rank = rank;
+    public Index(Page page, Lemma lemma, Float wordRank) {
+        this.page = page;
+        this.lemma = lemma;
+        this.wordRank = wordRank;
     }
 }

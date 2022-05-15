@@ -4,7 +4,7 @@ import lombok.*;
 
 
 @Value
-public class URLDto {
+public class PageDto {
     String url;
     String htmlCode;
     int statusCode;
