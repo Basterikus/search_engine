@@ -11,6 +11,8 @@ import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Component
@@ -92,7 +94,7 @@ public class SearchFromBase implements SearchText {
             StringBuilder clearContent = new StringBuilder();
             var title = clearElements(content, fieldList.get(0).getSelector());
             var body = clearElements(content, fieldList.get(1).getSelector());
-            clearContent.append(title).append(System.lineSeparator()).append(body);
+            clearContent.append(title).append(" ").append(body);
 
             var absRelevance = sortedPageByAbsRelevance.get(page);
             var snippet = getSnippet(clearContent.toString(), searchWordsLemmaList);
@@ -111,6 +113,7 @@ public class SearchFromBase implements SearchText {
     private String getSnippet(String content, List<String> lemmaList) {
         List<Integer> lemmaIndex = new ArrayList<>();
         StringBuilder result = new StringBuilder();
+//        StringBuilder result2 = new StringBuilder();
 //        String newContent = content;
         for (String lemma : lemmaList) {
             lemmaIndex.addAll(morphology.findLemmaIndex(content, lemma));
@@ -121,20 +124,25 @@ public class SearchFromBase implements SearchText {
             int end = content.indexOf(" ", start);
             String word = content.substring(start, end);
 //            newContent = newContent.replaceFirst(word, "<b>" + word + "</b>");
-            int lastPoint = content.lastIndexOf(" ", start);
-            String text = content.substring(lastPoint, end + 50);
+            int prevPoint = content.lastIndexOf(" ", start);
+//            if (prevPoint == -1) {
+//                prevPoint = content.lastIndexOf(" ", start);
+//            }
+            int lastPoint = content.indexOf(" ", end + 30);
+            String text = content.substring(prevPoint, lastPoint);
             text = text.replaceAll(word, "<b>" + word + "</b>");
             result.append(text).append("... ");
 //            wordEnd = end;
         }
 //        Pattern pattern = Pattern.compile("<b>[^\\s]+");
-//        Matcher matcher = pattern.matcher(newContent);
+//        Matcher matcher = pattern.matcher(result);
 //        int wordEnd = 0;
 //        while (matcher.find()) {
-//            if (matcher.start() - wordEnd > 30) {
-//                int lastPoint = newContent.lastIndexOf(" ", matcher.start() - 20);
-//                String text = newContent.substring(lastPoint, matcher.end() + 50);
-//                result.append(text).append("... ");
+//            if (matcher.start() - wordEnd < 20) {
+//                int prevPoint = result.lastIndexOf("...", matcher.start());
+//                int lastPoint = result.indexOf("...", matcher.end());
+//                String r2 = result.substring(prevPoint, lastPoint);
+//                result2.append(r2);
 //            }
 //            wordEnd = matcher.end();
 //        }

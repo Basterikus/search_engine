@@ -4,9 +4,8 @@ import com.basterikus.SearchEngine.dto.SearchTextDto;
 
 import java.util.List;
 
-public interface PageService {
-    void getAllPagesFromUrl(String url);
-    void getLemmasFromPages();
-    void indexingWords();
+
+public interface SearchService {
     List<SearchTextDto> searchText(String text);
+
 }

@@ -2,6 +2,7 @@ package com.basterikus.SearchEngine.parser;
 
 import com.basterikus.SearchEngine.dto.LemmaDto;
 import com.basterikus.SearchEngine.model.Field;
+import com.basterikus.SearchEngine.model.Site;
 import com.basterikus.SearchEngine.repository.FieldRepository;
 import com.basterikus.SearchEngine.model.Page;
 import com.basterikus.SearchEngine.repository.PageRepository;
@@ -27,10 +28,10 @@ public class LemmaConversion implements LemmaParser {
     }
 
     @Override
-    public void parse() {
+    public void parse(Site site) {
         lemmaDtoList = new ArrayList<>();
-        List<Page> pageList = (List<Page>) pageRepository.findAll();
-        List<Field> fieldList = (List<Field>) fieldRepository.findAll();
+        List<Page> pageList = pageRepository.findBySite(site);
+        List<Field> fieldList = fieldRepository.findAll();
         HashMap<String, Integer> lemmaList = new HashMap<>();
         for (Page page : pageList) {
             var content = page.getContent();

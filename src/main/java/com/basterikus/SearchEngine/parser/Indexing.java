@@ -24,9 +24,9 @@ public class Indexing implements IndexParser {
     private List<IndexDto> indexDtoList;
 
     @Override
-    public void indexPage() {
-        List<Page> pageList = pageRepository.findAll();
-        List<Lemma> lemmaList = lemmaRepository.findAll();
+    public void indexPage(Site site) {
+        List<Page> pageList = pageRepository.findBySite(site);
+        List<Lemma> lemmaList = lemmaRepository.findBySite(site);
         List<Field> fieldList = fieldRepository.findAll();
         indexDtoList = new ArrayList<>();
 

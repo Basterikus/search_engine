@@ -85,12 +85,14 @@ public class LuceneMorphology implements Morphology {
 
     private boolean isServiceWord(String word) {
         var morphForm = russianMorph.getMorphInfo(word);
-        for (String morph : morphForm) {
-            var wordInfo = morph.split("\\s");
-            for (String info : wordInfo) {
-                if (serviceWords.contains(info)) {
-                    return true;
-                }
+        for (String l : morphForm) {
+            if (l.contains("ПРЕДЛ")
+                    || l.contains("СОЮЗ")
+                    || l.contains("МЕЖД")
+                    || l.contains("МС")
+                    || l.contains("ЧАСТ")
+                    || l.length() <= 3) {
+                return true;
             }
         }
         return false;

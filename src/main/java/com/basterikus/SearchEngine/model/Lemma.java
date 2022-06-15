@@ -14,15 +14,19 @@ import java.util.List;
 public class Lemma {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
     private String lemma;
-    private int frequency;
+    private Integer frequency;
+    @ManyToOne
+    @JoinColumn(name = "site_id")
+    private Site site;
 
     @OneToMany(mappedBy = "lemma", cascade = CascadeType.ALL)
     private List<Index> index;
 
-    public Lemma(String lemma, int frequency) {
+    public Lemma(String lemma, int frequency, Site site) {
         this.lemma = lemma;
         this.frequency = frequency;
+        this.site = site;
     }
 }

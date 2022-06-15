@@ -6,3 +6,16 @@ spring.jpa.hibernate.ddl-auto: update
 spring.datasource.url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/search_engine?sessionVariables=sql_mode='NO_ENGINE_SUBSTITUTION'&jdbcCompliantTruncation=false
 spring.datasource.username: root
 spring.datasource.password: admin
+
+webinterface: /admin
+
+config:
+  site:
+    - url: https://www.svetlovka.ru
+      name: Библиотека Светловка
+
+    - url: https://dombulgakova.ru
+      name: Дом Булгакова
+
+    - url: https://nikoartgallery.com
+      name: Галерея Исскуств Нико

@@ -13,18 +13,22 @@ import java.util.List;
 public class Page {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
     private String path;
-    private int statusCode;
+    private Integer statusCode;
     @Column(columnDefinition = "MEDIUMTEXT")
     private String content;
+    @ManyToOne
+    @JoinColumn(name = "site_id")
+    private Site site;
 
     @OneToMany(mappedBy = "page", cascade = CascadeType.ALL)
     private List<Index> index;
 
-    public Page(String path, int statusCode, String content) {
+    public Page(String path, int statusCode, String content, Site site) {
         this.path = path;
         this.statusCode = statusCode;
         this.content = content;
+        this.site = site;
     }
 }
