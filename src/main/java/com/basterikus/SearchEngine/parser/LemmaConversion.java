@@ -2,14 +2,13 @@ package com.basterikus.SearchEngine.parser;
 
 import com.basterikus.SearchEngine.dto.LemmaDto;
 import com.basterikus.SearchEngine.model.Field;
-import com.basterikus.SearchEngine.model.Site;
-import com.basterikus.SearchEngine.repository.FieldRepository;
 import com.basterikus.SearchEngine.model.Page;
-import com.basterikus.SearchEngine.repository.PageRepository;
+import com.basterikus.SearchEngine.model.Site;
 import com.basterikus.SearchEngine.morphology.Morphology;
+import com.basterikus.SearchEngine.repository.FieldRepository;
+import com.basterikus.SearchEngine.repository.PageRepository;
+import com.basterikus.SearchEngine.utils.ClearHtmlCode;
 import lombok.RequiredArgsConstructor;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -28,15 +27,15 @@ public class LemmaConversion implements LemmaParser {
     }
 
     @Override
-    public void parse(Site site) {
+    public void run(Site site) {
         lemmaDtoList = new ArrayList<>();
         List<Page> pageList = pageRepository.findBySite(site);
         List<Field> fieldList = fieldRepository.findAll();
         HashMap<String, Integer> lemmaList = new HashMap<>();
         for (Page page : pageList) {
             var content = page.getContent();
-            var title = clearElements(content, fieldList.get(0).getSelector());
-            var body = clearElements(content, fieldList.get(1).getSelector());
+            var title = ClearHtmlCode.clear(content, fieldList.get(0).getSelector());
+            var body = ClearHtmlCode.clear(content, fieldList.get(1).getSelector());
             var titleList = morphology.getLemmaList(title);
             var bodyList = morphology.getLemmaList(body);
 
@@ -54,15 +53,5 @@ public class LemmaConversion implements LemmaParser {
             lemmaDtoList.add(new LemmaDto(lemma, frequency));
         }
 
-    }
-
-    private String clearElements(String content, String selector) {
-        StringBuilder html = new StringBuilder();
-        var doc = Jsoup.parse(content);
-        var elements = doc.select(selector);
-        for (Element el : elements) {
-            html.append(el.html());
-        }
-        return Jsoup.parse(html.toString()).text();
     }
 }

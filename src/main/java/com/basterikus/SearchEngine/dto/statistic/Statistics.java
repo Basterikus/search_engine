@@ -5,7 +5,7 @@ import lombok.Value;
 import java.util.List;
 
 @Value
-public class StatisticDto {
-    TotalDto totalDto;
-    List<DetailedDto> detailedDto;
+public class Statistics {
+    Total total;
+    List<Detailed> detailed;
 }

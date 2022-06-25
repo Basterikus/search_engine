@@ -1,8 +1,8 @@
 package com.basterikus.SearchEngine.service.impl;
 
-import com.basterikus.SearchEngine.dto.statistic.DetailedDto;
-import com.basterikus.SearchEngine.dto.statistic.StatisticDto;
-import com.basterikus.SearchEngine.dto.statistic.TotalDto;
+import com.basterikus.SearchEngine.dto.statistic.Detailed;
+import com.basterikus.SearchEngine.dto.statistic.Statistics;
+import com.basterikus.SearchEngine.dto.statistic.Total;
 import com.basterikus.SearchEngine.model.Site;
 import com.basterikus.SearchEngine.repository.LemmaRepository;
 import com.basterikus.SearchEngine.repository.PageRepository;
@@ -22,20 +22,20 @@ public class StatisticServiceImpl implements StatisticService {
     private final LemmaRepository lemmaRepository;
 
     @Override
-    public StatisticDto getStatistic() {
+    public Statistics getStatistic() {
         var total = getTotal();
         var detailed = getDetailedList();
-        return new StatisticDto(total, detailed);
+        return new Statistics(total, detailed);
     }
 
-    private TotalDto getTotal() {
+    private Total getTotal() {
         var sites = siteRepository.count();
         var pages = pageRepository.count();
         var lemmas = lemmaRepository.count();
-        return new TotalDto(sites, pages, lemmas, true);
+        return new Total(sites, pages, lemmas, true);
     }
 
-    private DetailedDto getDetailed(Site site) {
+    private Detailed getDetailed(Site site) {
         var url = site.getUrl();
         var name = site.getName();
         var status = site.getStatus();
@@ -43,15 +43,15 @@ public class StatisticServiceImpl implements StatisticService {
         var error = site.getLastError();
         var pages = pageRepository.countBySite(site);
         var lemmas = lemmaRepository.countBySite(site);
-        return new DetailedDto(url, name, status, statusTime, error, pages, lemmas);
+        return new Detailed(url, name, status, statusTime, error, pages, lemmas);
     }
 
-    private List<DetailedDto> getDetailedList() {
+    private List<Detailed> getDetailedList() {
         var siteList = siteRepository.findAll();
-        List<DetailedDto> result = new ArrayList<>();
+        List<Detailed> result = new ArrayList<>();
         for (Site site : siteList) {
-            DetailedDto detailedDto = getDetailed(site);
-            result.add(detailedDto);
+            Detailed detailed = getDetailed(site);
+            result.add(detailed);
         }
         return result;
     }

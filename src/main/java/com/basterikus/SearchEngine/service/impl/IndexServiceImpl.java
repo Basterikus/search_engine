@@ -25,16 +25,18 @@ public class IndexServiceImpl implements IndexService {
     private final IndexConfig indexConfig;
     private final SiteRepository siteRepository;
     private static final int processorCoreCount = Runtime.getRuntime().availableProcessors();
-    private static final ExecutorService executorService = Executors.newFixedThreadPool(processorCoreCount);
+    private ExecutorService executorService;
     private final PageRepository pageRepository;
     private final LemmaParser lemmaParser;
     private final LemmaRepository lemmaRepository;
     private final IndexParser indexParser;
     private final IndexRepository indexRepository;
 
+
     @Override
-    public void indexUrl(String url) {
+    public boolean indexUrl(String url) {
         if (urlCheck(url)) {
+            executorService = Executors.newFixedThreadPool(processorCoreCount);
             executorService.submit(new SiteIndex(pageRepository,
                     lemmaParser,
                     lemmaRepository,
@@ -44,17 +46,19 @@ public class IndexServiceImpl implements IndexService {
                     url,
                     indexConfig));
             executorService.shutdown();
+            return true;
         } else {
-            System.out.println("Данная страница находится за пределами сайтов, указанных в конфигурационном файле");
+            return false;
         }
     }
 
     @Override
-    public void indexAll() {
+    public boolean indexAll() {
         if (isIndexingActive()) {
-            System.out.println("Индексация уже запущена");
+            return false;
         } else {
             var urlList = indexConfig.getSite();
+            executorService = Executors.newFixedThreadPool(processorCoreCount);
             for (Map<String, String> map : urlList) {
                 String url = map.get("url");
                 executorService.submit(new SiteIndex(pageRepository,
@@ -67,22 +71,17 @@ public class IndexServiceImpl implements IndexService {
                         indexConfig));
             }
             executorService.shutdown();
+            return true;
         }
     }
 
     @Override
-    public void stopIndexing() {
+    public boolean stopIndexing() {
         if (isIndexingActive()) {
             executorService.shutdownNow();
-            var siteList = siteRepository.findAll();
-            for (Site site : siteList) {
-                if (site.getStatus() == Status.INDEXING) {
-                    site.setStatus(Status.FAILED);
-                    siteRepository.save(site);
-                }
-            }
+            return true;
         } else {
-            System.out.println("Индексация не запущена");
+            return false;
         }
     }
 

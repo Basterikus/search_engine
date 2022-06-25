@@ -1,33 +1,29 @@
 package com.basterikus.SearchEngine.morphology;
 
-import org.apache.lucene.morphology.english.EnglishLuceneMorphology;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 import org.apache.lucene.morphology.russian.RussianLuceneMorphology;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 
 @Component
 public class LuceneMorphology implements Morphology {
-    private final static Set<String> serviceWords;
     private static org.apache.lucene.morphology.LuceneMorphology russianMorph;
     private final static String regex = "\\p{Punct}|[0-9]|@|©|◄|»|«|—|-|№|…";
-//    private static org.apache.lucene.morphology.LuceneMorphology englishMorph;
+    private final static Logger logger = LogManager.getLogger(LuceneMorphology.class);
+    private final static Marker INVALID_SYMBOL_MARKER = MarkerManager.getMarker("INVALID_SYMBOL");
 
     static {
-        serviceWords = new TreeSet<>();
-        serviceWords.add("ЧАСТ");
-        serviceWords.add("СОЮЗ");
-        serviceWords.add("ПРЕДЛ");
-        serviceWords.add("МЕЖД");
-        serviceWords.add("PART");
-        serviceWords.add("CONJ");
-        serviceWords.add("ARTICLE");
-        serviceWords.add("PREP");
         try {
             russianMorph = new RussianLuceneMorphology();
-//            englishMorph = new EnglishLuceneMorphology();
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e.getMessage());
         }
     }
 
@@ -38,7 +34,6 @@ public class LuceneMorphology implements Morphology {
         HashMap<String, Integer> lemmaList = new HashMap<>();
         var elements = content.split("\\s+");
         for (String el : elements) {
-//            System.out.println(el);
             var wordsList = getLemma(el);
             for (String word : wordsList) {
                 int count = lemmaList.getOrDefault(word, 0);
@@ -57,17 +52,13 @@ public class LuceneMorphology implements Morphology {
                 lemmaList.addAll(baseRusForm);
             }
         } catch (Exception e) {
-//            var baseEngForm = englishMorph.getNormalForms(word);
-//            if (!isEngServiceWord(word)) {
-//                lemmaList.addAll(baseEngForm);
-//            }
-            System.out.println("Неизвестный символ - " + word);
+            logger.error(INVALID_SYMBOL_MARKER, "Символ не найден - " + word);
         }
         return lemmaList;
     }
 
     @Override
-    public List<Integer> findLemmaIndex(String content, String lemma) {
+    public List<Integer> findLemmaIndexInText(String content, String lemma) {
         List<Integer> lemmaIndexList = new ArrayList<>();
         var elements = content.toLowerCase(Locale.ROOT).split("\\p{Punct}|\\s");
         int index = 0;

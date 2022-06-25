@@ -6,7 +6,7 @@ import lombok.Value;
 import java.util.Date;
 
 @Value
-public class DetailedDto {
+public class Detailed {
     String url;
     String name;
     Status status;

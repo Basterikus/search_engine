@@ -1,14 +1,17 @@
 package com.basterikus.SearchEngine.parser;
 
 import com.basterikus.SearchEngine.dto.IndexDto;
-import com.basterikus.SearchEngine.model.*;
+import com.basterikus.SearchEngine.model.Field;
+import com.basterikus.SearchEngine.model.Lemma;
+import com.basterikus.SearchEngine.model.Page;
+import com.basterikus.SearchEngine.model.Site;
 import com.basterikus.SearchEngine.morphology.Morphology;
 import com.basterikus.SearchEngine.repository.FieldRepository;
 import com.basterikus.SearchEngine.repository.LemmaRepository;
 import com.basterikus.SearchEngine.repository.PageRepository;
+import com.basterikus.SearchEngine.utils.ClearHtmlCode;
 import lombok.RequiredArgsConstructor;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -16,6 +19,7 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class Indexing implements IndexParser {
     private final PageRepository pageRepository;
     private final LemmaRepository lemmaRepository;
@@ -24,7 +28,7 @@ public class Indexing implements IndexParser {
     private List<IndexDto> indexDtoList;
 
     @Override
-    public void indexPage(Site site) {
+    public void run(Site site) {
         List<Page> pageList = pageRepository.findBySite(site);
         List<Lemma> lemmaList = lemmaRepository.findBySite(site);
         List<Field> fieldList = fieldRepository.findAll();
@@ -32,11 +36,11 @@ public class Indexing implements IndexParser {
 
         for (Page page : pageList) {
             if (page.getStatusCode() == 200) {
-                System.out.println("Getting word from page" + page.getPath());
+                log.info("Getting word from page" + page.getPath());
                 Integer pageId = page.getId();
                 var content = page.getContent();
-                var title = clearElements(content, fieldList.get(0).getSelector());
-                var body = clearElements(content, fieldList.get(1).getSelector());
+                var title = ClearHtmlCode.clear(content, fieldList.get(0).getSelector());
+                var body = ClearHtmlCode.clear(content, fieldList.get(1).getSelector());
                 var titleList = morphology.getLemmaList(title);
                 var bodyList = morphology.getLemmaList(body);
 
@@ -55,11 +59,11 @@ public class Indexing implements IndexParser {
                         }
                         indexDtoList.add(new IndexDto(pageId, lemmaId, totalRank));
                     } else {
-                        System.out.println("Lemma not found");
+                        log.error("Lemma not found");
                     }
                 }
             } else {
-                System.out.println("Bad status code");
+                log.error("Bad status code");
             }
         }
     }
@@ -67,15 +71,5 @@ public class Indexing implements IndexParser {
     @Override
     public List<IndexDto> getIndexList() {
         return indexDtoList;
-    }
-
-    private String clearElements(String content, String selector) {
-        StringBuilder html = new StringBuilder();
-        var doc = Jsoup.parse(content);
-        var elements = doc.select(selector);
-        for (Element el : elements) {
-            html.append(el.html());
-        }
-        return Jsoup.parse(html.toString()).text();
     }
 }

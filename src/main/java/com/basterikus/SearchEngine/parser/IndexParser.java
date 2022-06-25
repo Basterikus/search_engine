@@ -6,6 +6,6 @@ import com.basterikus.SearchEngine.model.Site;
 import java.util.List;
 
 public interface IndexParser {
-    void indexPage(Site site);
+    void run(Site site);
     List<IndexDto> getIndexList();
 }

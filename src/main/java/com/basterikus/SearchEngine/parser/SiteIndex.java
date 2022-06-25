@@ -10,14 +10,15 @@ import com.basterikus.SearchEngine.repository.LemmaRepository;
 import com.basterikus.SearchEngine.repository.PageRepository;
 import com.basterikus.SearchEngine.repository.SiteRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
 import java.util.concurrent.ForkJoinPool;
 
 @RequiredArgsConstructor
+@Slf4j
 public class SiteIndex implements Runnable {
 
-    private static ForkJoinPool forkJoinPool;
     private static final int processorCoreCount = Runtime.getRuntime().availableProcessors();
     private final PageRepository pageRepository;
     private final LemmaParser lemmaParser;
@@ -27,6 +28,7 @@ public class SiteIndex implements Runnable {
     private final SiteRepository siteRepository;
     private final String url;
     private final IndexConfig indexConfig;
+
 
     @Override
     public void run() {
@@ -44,67 +46,81 @@ public class SiteIndex implements Runnable {
         site.setStatusTime(new Date());
         siteRepository.save(site);
         String urlFormat = url + "/";
-        List<PageDto> pageDtoList = new ArrayList<>();
         List<PageDto> pageDtos = new Vector<>();
-        Thread workThread = new Thread(() -> {
-            forkJoinPool = new ForkJoinPool(processorCoreCount);
-            var pages = forkJoinPool.invoke(new PageUrlParser(urlFormat, pageDtos));
-            pageDtoList.addAll(pages);
-            System.out.println("Save to base");
+        List<String> urlList = new Vector<>();
+        ForkJoinPool forkJoinPool = new ForkJoinPool(processorCoreCount);
+        var pages = forkJoinPool.invoke(new PageUrlParser(urlFormat, pageDtos, urlList));
+        List<PageDto> pageDtoList = new ArrayList<>(pages);
+        try {
             saveToBase(pageDtoList, url);
             getLemmasFromPages(url);
             indexingWords(url);
-        });
-        workThread.start();
-    }
-
-    private void getLemmasFromPages(String url) {
-        System.out.println("Getting lemmas");
-        var site = siteRepository.findByUrl(url);
-        site.setStatusTime(new Date());
-        lemmaParser.parse(site);
-        var lemmaDtoList = lemmaParser.getLemmaDtoList();
-        System.out.println("Starting save Lemma");
-        List<Lemma> lemmaList = new ArrayList<>();
-        for (LemmaDto lemmaDto : lemmaDtoList) {
-            lemmaList.add(new Lemma(lemmaDto.getLemma(), lemmaDto.getFrequency(), site));
-        }
-        lemmaRepository.saveAll(lemmaList);
-    }
-
-    private void indexingWords(String url) {
-        System.out.println("Starting indexing");
-        var site = siteRepository.findByUrl(url);
-        indexParser.indexPage(site);
-        var indexDtoList = indexParser.getIndexList();
-        System.out.println("Starting new indexList");
-        List<Index> indexList = new ArrayList<>();
-        for (IndexDto indexDto : indexDtoList) {
-            var page = pageRepository.getById(indexDto.getPageID());
-            var lemma = lemmaRepository.getById(indexDto.getLemmaID());
+        } catch (Exception e) {
+            log.error("Thread exception");
+            site.setLastError("Thread exception");
+            site.setStatus(Status.FAILED);
             site.setStatusTime(new Date());
-            indexList.add(new Index(page, lemma, indexDto.getRank()));
+            siteRepository.save(site);
         }
-        System.out.println("Starting save to db");
-        indexRepository.saveAll(indexList);
-        System.out.println("Indexing complete");
-        site.setStatusTime(new Date());
-        site.setStatus(Status.INDEXED);
-        siteRepository.save(site);
     }
 
-    private void saveToBase(List<PageDto> pages, String url) {
-        List<Page> pageList = new ArrayList<>();
-        var site = siteRepository.findByUrl(url);
-        for (PageDto page : pages) {
-            int start = page.getUrl().indexOf(url) + url.length();
-            String pageFormat = page.getUrl().substring(start);
-            pageList.add(new Page(pageFormat,
-                    page.getStatusCode(),
-                    page.getHtmlCode(),
-                    site));
+    private void getLemmasFromPages(String url) throws InterruptedException {
+        if (!Thread.interrupted()) {
+            var site = siteRepository.findByUrl(url);
+            site.setStatusTime(new Date());
+            lemmaParser.run(site);
+            var lemmaDtoList = lemmaParser.getLemmaDtoList();
+            List<Lemma> lemmaList = new ArrayList<>();
+            for (LemmaDto lemmaDto : lemmaDtoList) {
+                lemmaList.add(new Lemma(lemmaDto.getLemma(), lemmaDto.getFrequency(), site));
+            }
+            lemmaRepository.saveAll(lemmaList);
+        } else {
+            throw new InterruptedException();
         }
-        pageRepository.saveAll(pageList);
+    }
+
+    private void indexingWords(String url) throws InterruptedException {
+        if (!Thread.interrupted()) {
+            log.info("Starting indexing");
+            var site = siteRepository.findByUrl(url);
+            indexParser.run(site);
+            var indexDtoList = indexParser.getIndexList();
+            log.info("Starting new indexList");
+            List<Index> indexList = new ArrayList<>();
+            for (IndexDto indexDto : indexDtoList) {
+                var page = pageRepository.getById(indexDto.getPageID());
+                var lemma = lemmaRepository.getById(indexDto.getLemmaID());
+                site.setStatusTime(new Date());
+                indexList.add(new Index(page, lemma, indexDto.getRank()));
+            }
+            log.info("Starting save to db");
+            indexRepository.saveAll(indexList);
+            log.info("Indexing complete");
+            site.setStatusTime(new Date());
+            site.setStatus(Status.INDEXED);
+            siteRepository.save(site);
+        } else {
+            throw new InterruptedException();
+        }
+    }
+
+    private void saveToBase(List<PageDto> pages, String url) throws InterruptedException {
+        if (!Thread.interrupted()) {
+            List<Page> pageList = new ArrayList<>();
+            var site = siteRepository.findByUrl(url);
+            for (PageDto page : pages) {
+                int start = page.getUrl().indexOf(url) + url.length();
+                String pageFormat = page.getUrl().substring(start);
+                pageList.add(new Page(pageFormat,
+                        page.getStatusCode(),
+                        page.getHtmlCode(),
+                        site));
+            }
+            pageRepository.saveAll(pageList);
+        } else {
+            throw new InterruptedException();
+        }
     }
 
     private String getName(String url) {

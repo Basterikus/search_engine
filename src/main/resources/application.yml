@@ -9,6 +9,12 @@ spring.datasource.password: admin
 
 webinterface: /admin
 
+spring:
+  security:
+    user:
+      name: admin
+      password: admin
+
 config:
   site:
     - url: https://www.svetlovka.ru
