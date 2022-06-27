@@ -52,7 +52,7 @@ public class LuceneMorphology implements Morphology {
                 lemmaList.addAll(baseRusForm);
             }
         } catch (Exception e) {
-            logger.error(INVALID_SYMBOL_MARKER, "Символ не найден - " + word);
+            logger.debug(INVALID_SYMBOL_MARKER, "Символ не найден - " + word);
         }
         return lemmaList;
     }

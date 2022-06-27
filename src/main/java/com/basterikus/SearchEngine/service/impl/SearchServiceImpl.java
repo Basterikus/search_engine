@@ -61,10 +61,13 @@ public class SearchServiceImpl implements SearchService {
                                              int limit) {
         List<SearchDto> result = new ArrayList<>();
         if (lemmaList.size() >= textLemmaList.size()) {
-            var foundPageList = getPageList(lemmaList);
+            var foundPageList = pageRepository.findByLemmaList(lemmaList);
             var foundIndexList = indexRepository.findByPagesAndLemmas(lemmaList, foundPageList);
             var sortedPageByAbsRelevance = getPageAbsRelevance(foundPageList, foundIndexList);
-            var dataList = getSearchData(sortedPageByAbsRelevance, textLemmaList, offset);
+            var dataList = getSearchData(sortedPageByAbsRelevance, textLemmaList);
+            if (offset > dataList.size()) {
+                return new ArrayList<>();
+            }
             if (dataList.size() > limit) {
                 for (int i = offset; i < limit; i++) {
                     result.add(dataList.get(i));
@@ -122,14 +125,6 @@ public class SearchServiceImpl implements SearchService {
         return result;
     }
 
-    private List<Page> getPageList(List<Lemma> lemmaList) {
-        if (lemmaList.size() > 1) {
-            return pageRepository.findByLemmaList(lemmaList);
-        } else {
-            return pageRepository.findByLemma(lemmaList);
-        }
-    }
-
     private List<String> getLemmaFromText(String[] elements) {
         List<String> lemmas = new ArrayList<>();
         for (String el : elements) {
@@ -162,8 +157,7 @@ public class SearchServiceImpl implements SearchService {
     }
 
     private List<SearchDto> getSearchData(LinkedHashMap<Page, Float> pageList,
-                                          List<String> textLemmaList,
-                                          int offset) {
+                                          List<String> textLemmaList) {
         List<SearchDto> result = new ArrayList<>();
         var fieldList = fieldRepository.findAll();
         for (Page page : pageList.keySet()) {

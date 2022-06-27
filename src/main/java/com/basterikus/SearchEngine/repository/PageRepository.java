@@ -16,11 +16,6 @@ public interface PageRepository extends JpaRepository<Page, Integer> {
     List<Page> findBySite(Site site);
     Long countBySite(Site site);
 
-    @Query(value = "SELECT p FROM Page p " +
-            "JOIN Index i ON p = i.page " +
-            "WHERE i.lemma IN :lemmas GROUP BY i.page HAVING COUNT(*) > 1")
-    List<Page> findByLemmaList(@Param("lemmas") Collection<Lemma> lemmaList);
-
     @Query(value = "SELECT p FROM Page p JOIN Index i ON p = i.page WHERE i.lemma IN :lemmas")
-    List<Page> findByLemma(@Param("lemmas") Collection<Lemma> lemmaList);
+    List<Page> findByLemmaList(@Param("lemmas") Collection<Lemma> lemmaList);
 }

@@ -59,7 +59,7 @@ public class Indexing implements IndexParser {
                         }
                         indexDtoList.add(new IndexDto(pageId, lemmaId, totalRank));
                     } else {
-                        log.error("Lemma not found");
+                        log.debug("Lemma not found");
                     }
                 }
             } else {

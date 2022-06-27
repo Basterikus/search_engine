@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ForkJoinPool;
 
 @RequiredArgsConstructor
@@ -41,20 +42,15 @@ public class SiteIndex implements Runnable {
         }
         Site site = new Site();
         site.setUrl(url);
-        site.setName(getName(url));
+        site.setName(getName());
         site.setStatus(Status.INDEXING);
         site.setStatusTime(new Date());
         siteRepository.save(site);
-        String urlFormat = url + "/";
-        List<PageDto> pageDtos = new Vector<>();
-        List<String> urlList = new Vector<>();
-        ForkJoinPool forkJoinPool = new ForkJoinPool(processorCoreCount);
-        var pages = forkJoinPool.invoke(new PageUrlParser(urlFormat, pageDtos, urlList));
-        List<PageDto> pageDtoList = new ArrayList<>(pages);
         try {
-            saveToBase(pageDtoList, url);
-            getLemmasFromPages(url);
-            indexingWords(url);
+            var pageDtoList = getPageDtoList();
+            saveToBase(pageDtoList);
+            getLemmasFromPages();
+            indexingWords();
         } catch (Exception e) {
             log.error("Thread exception");
             site.setLastError("Thread exception");
@@ -64,13 +60,24 @@ public class SiteIndex implements Runnable {
         }
     }
 
-    private void getLemmasFromPages(String url) throws InterruptedException {
+    private List<PageDto> getPageDtoList() throws InterruptedException {
+        if (!Thread.interrupted()) {
+            String urlFormat = url + "/";
+            List<PageDto> pageDtoVector = new Vector<>();
+            List<String> urlList = new Vector<>();
+            ForkJoinPool forkJoinPool = new ForkJoinPool(processorCoreCount);
+            var pages = forkJoinPool.invoke(new PageUrlParser(urlFormat, pageDtoVector, urlList));
+            return new CopyOnWriteArrayList<>(pages);
+        } else throw new InterruptedException();
+    }
+
+    private void getLemmasFromPages() throws InterruptedException {
         if (!Thread.interrupted()) {
             var site = siteRepository.findByUrl(url);
             site.setStatusTime(new Date());
             lemmaParser.run(site);
-            var lemmaDtoList = lemmaParser.getLemmaDtoList();
-            List<Lemma> lemmaList = new ArrayList<>();
+            List<LemmaDto> lemmaDtoList = new CopyOnWriteArrayList<>(lemmaParser.getLemmaDtoList());
+            List<Lemma> lemmaList = new CopyOnWriteArrayList<>();
             for (LemmaDto lemmaDto : lemmaDtoList) {
                 lemmaList.add(new Lemma(lemmaDto.getLemma(), lemmaDto.getFrequency(), site));
             }
@@ -80,19 +87,21 @@ public class SiteIndex implements Runnable {
         }
     }
 
-    private void indexingWords(String url) throws InterruptedException {
+    private void indexingWords() throws InterruptedException {
         if (!Thread.interrupted()) {
             log.info("Starting indexing");
             var site = siteRepository.findByUrl(url);
             indexParser.run(site);
-            var indexDtoList = indexParser.getIndexList();
+            List<IndexDto> indexDtoList = new CopyOnWriteArrayList<>(indexParser.getIndexList());
             log.info("Starting new indexList");
-            List<Index> indexList = new ArrayList<>();
+            List<Index> indexList = new CopyOnWriteArrayList<>();
             for (IndexDto indexDto : indexDtoList) {
-                var page = pageRepository.getById(indexDto.getPageID());
-                var lemma = lemmaRepository.getById(indexDto.getLemmaID());
-                site.setStatusTime(new Date());
-                indexList.add(new Index(page, lemma, indexDto.getRank()));
+                if (!Thread.interrupted()) {
+                    var page = pageRepository.getById(indexDto.getPageID());
+                    var lemma = lemmaRepository.getById(indexDto.getLemmaID());
+                    site.setStatusTime(new Date());
+                    indexList.add(new Index(page, lemma, indexDto.getRank()));
+                } else throw new InterruptedException();
             }
             log.info("Starting save to db");
             indexRepository.saveAll(indexList);
@@ -105,9 +114,9 @@ public class SiteIndex implements Runnable {
         }
     }
 
-    private void saveToBase(List<PageDto> pages, String url) throws InterruptedException {
+    private void saveToBase(List<PageDto> pages) throws InterruptedException {
         if (!Thread.interrupted()) {
-            List<Page> pageList = new ArrayList<>();
+            List<Page> pageList = new CopyOnWriteArrayList<>();
             var site = siteRepository.findByUrl(url);
             for (PageDto page : pages) {
                 int start = page.getUrl().indexOf(url) + url.length();
@@ -123,7 +132,7 @@ public class SiteIndex implements Runnable {
         }
     }
 
-    private String getName(String url) {
+    private String getName() {
         var urlList = indexConfig.getSite();
         for (Map<String, String> map : urlList) {
             if (map.get("url").equals(url)) {

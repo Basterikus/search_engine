@@ -9,12 +9,6 @@ spring.datasource.password: admin
 
 webinterface: /admin
 
-spring:
-  security:
-    user:
-      name: admin
-      password: admin
-
 config:
   site:
     - url: https://www.svetlovka.ru
@@ -25,3 +19,6 @@ config:
 
     - url: https://nikoartgallery.com
       name: Галерея Исскуств Нико
+
+    - url: https://www.lutherancathedral.ru
+      name: Собор святых Петра и Павла
