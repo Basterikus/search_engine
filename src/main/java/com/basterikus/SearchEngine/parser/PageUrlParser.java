@@ -55,7 +55,7 @@ public class PageUrlParser extends RecursiveTask<List<PageDto>> {
 
             taskList.forEach(ForkJoinTask::join);
         } catch (Exception e) {
-            log.error("Ошибка парсинга - " + url);
+            log.debug("Ошибка парсинга - " + url);
             PageDto pageDto = new PageDto(url, "", 500);
             pageDtoList.add(pageDto);
         }
@@ -71,7 +71,7 @@ public class PageUrlParser extends RecursiveTask<List<PageDto>> {
                     .referrer("http://www.google.com")
                     .get();
         } catch (Exception e) {
-            log.error("Не удалось установить подключение с " + url);
+            log.debug("Не удалось установить подключение с " + url);
         }
         return doc;
     }

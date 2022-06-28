@@ -29,13 +29,15 @@ public class SearchServiceImpl implements SearchService {
 
     @Override
     public List<SearchDto> allSiteSearch(String searchText, int offset, int limit) {
+        log.info("Получаем инфомацию по поиску \"" + searchText + "\"");
         var siteList = siteRepository.findAll();
-        List<SearchDto> searchData = new ArrayList<>();
         List<SearchDto> result = new ArrayList<>();
+        List<Lemma> foundLemmaList = new ArrayList<>();
+        var textLemmaList = getLemmaFromText(searchText);
         for (Site site : siteList) {
-            var dataList = siteSearch(searchText, site.getUrl(), offset, limit);
-            searchData.addAll(dataList);
+            foundLemmaList.addAll(getLemmaListFromSite(textLemmaList, site));
         }
+        List<SearchDto> searchData = new ArrayList<>(getSearchDtoList(foundLemmaList, textLemmaList, offset, limit));
         searchData.sort((o1, o2) -> Float.compare(o2.getRelevance(), o1.getRelevance()));
         if (searchData.size() > limit) {
             for (int i = offset; i < limit; i++) {
@@ -50,8 +52,7 @@ public class SearchServiceImpl implements SearchService {
     public List<SearchDto> siteSearch(String searchText, String url, int offset, int limit) {
         log.info("Получаем информацию по поиску \"" + searchText + "\" с сайта - " + url);
         var site = siteRepository.findByUrl(url);
-        var elements = searchText.toLowerCase(Locale.ROOT).split("\\s+");
-        var textLemmaList = getLemmaFromText(elements);
+        var textLemmaList = getLemmaFromText(searchText);
         var foundLemmaList = getLemmaListFromSite(textLemmaList, site);
         return getSearchDtoList(foundLemmaList, textLemmaList, offset, limit);
     }
@@ -139,7 +140,8 @@ public class SearchServiceImpl implements SearchService {
         return result;
     }
 
-    private List<String> getLemmaFromText(String[] elements) {
+    private List<String> getLemmaFromText(String searchText) {
+        var elements = searchText.toLowerCase(Locale.ROOT).split("\\s+");
         List<String> lemmas = new ArrayList<>();
         for (String el : elements) {
             var lemmaWord = morphology.getLemma(el);
