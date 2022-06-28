@@ -83,23 +83,36 @@ public class SearchServiceImpl implements SearchService {
         for (String lemma : lemmaList) {
             lemmaIndex.addAll(morphology.findLemmaIndexInText(content, lemma));
         }
-        if (lemmaIndex.size() > 5) {
-            for (int i = 0; i <= 5; i++) {
-                var text = getSearchWordFromContent(lemmaIndex.get(i), content);
-                result.append(text).append("... ");
-            }
-        } else {
-            for (Integer index : lemmaIndex) {
-                var text = getSearchWordFromContent(index, content);
-                result.append(text).append("... ");
+        Collections.sort(lemmaIndex);
+        var wordsList = getWordsFromContent(content, lemmaIndex);
+        for (int i = 0; i < wordsList.size(); i++) {
+            result.append(wordsList.get(i)).append("... ");
+            if (i > 5) {
+                break;
             }
         }
         return result.toString();
     }
 
-    private String getSearchWordFromContent(Integer index, String content) {
-        int start = index;
-        int end = content.indexOf(" ", start);
+    private List<String> getWordsFromContent(String content, List<Integer> lemmaIndex) {
+        List<String> result = new ArrayList<>();
+        for (int i = 0; i < lemmaIndex.size(); i++) {
+            int start = lemmaIndex.get(i);
+            int end = content.indexOf(" ", start);
+            int nextPoint = i + 1;
+            while (nextPoint < lemmaIndex.size() && lemmaIndex.get(nextPoint) - end > 0 && lemmaIndex.get(nextPoint) - end < 5) {
+                end = content.indexOf(" ", lemmaIndex.get(nextPoint));
+                nextPoint += 1;
+            }
+            i = nextPoint - 1;
+            var text = getWordsFromIndex(start, end, content);
+            result.add(text);
+        }
+        result.sort(Comparator.comparingInt(String::length).reversed());
+        return result;
+    }
+
+    private String getWordsFromIndex(int start, int end, String content) {
         String word = content.substring(start, end);
         int prevPoint;
         int lastPoint;
