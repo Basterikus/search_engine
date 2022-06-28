@@ -34,12 +34,14 @@ public class SiteIndex implements Runnable {
     @Override
     public void run() {
         if (siteRepository.findByUrl(url) != null) {
+            log.info("Начато удаление данных - " + url);
             var site = siteRepository.findByUrl(url);
             site.setStatus(Status.INDEXING);
             site.setStatusTime(new Date());
             siteRepository.save(site);
             siteRepository.delete(site);
         }
+        log.info("Начата индексация - " + url);
         Site site = new Site();
         site.setUrl(url);
         site.setName(getName());
@@ -52,8 +54,8 @@ public class SiteIndex implements Runnable {
             getLemmasFromPages();
             indexingWords();
         } catch (Exception e) {
-            log.error("Thread exception");
-            site.setLastError("Thread exception");
+            log.error("Индексация остановлена - " + url);
+            site.setLastError("Индексация остановлена");
             site.setStatus(Status.FAILED);
             site.setStatusTime(new Date());
             siteRepository.save(site);
@@ -89,11 +91,9 @@ public class SiteIndex implements Runnable {
 
     private void indexingWords() throws InterruptedException {
         if (!Thread.interrupted()) {
-            log.info("Starting indexing");
             var site = siteRepository.findByUrl(url);
             indexParser.run(site);
             List<IndexDto> indexDtoList = new CopyOnWriteArrayList<>(indexParser.getIndexList());
-            log.info("Starting new indexList");
             List<Index> indexList = new CopyOnWriteArrayList<>();
             for (IndexDto indexDto : indexDtoList) {
                 if (!Thread.interrupted()) {
@@ -103,9 +103,8 @@ public class SiteIndex implements Runnable {
                     indexList.add(new Index(page, lemma, indexDto.getRank()));
                 } else throw new InterruptedException();
             }
-            log.info("Starting save to db");
             indexRepository.saveAll(indexList);
-            log.info("Indexing complete");
+            log.info("Индексация завершена - " + url);
             site.setStatusTime(new Date());
             site.setStatus(Status.INDEXED);
             siteRepository.save(site);

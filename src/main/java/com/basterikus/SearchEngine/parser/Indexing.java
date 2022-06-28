@@ -36,7 +36,6 @@ public class Indexing implements IndexParser {
 
         for (Page page : pageList) {
             if (page.getStatusCode() == 200) {
-                log.info("Getting word from page" + page.getPath());
                 Integer pageId = page.getId();
                 var content = page.getContent();
                 var title = ClearHtmlCode.clear(content, fieldList.get(0).getSelector());
@@ -63,7 +62,7 @@ public class Indexing implements IndexParser {
                     }
                 }
             } else {
-                log.error("Bad status code");
+                log.debug("Bad status code - " + page.getStatusCode());
             }
         }
     }

@@ -34,7 +34,6 @@ public class PageUrlParser extends RecursiveTask<List<PageDto>> {
             int status = response.statusCode();
             PageDto pageDto = new PageDto(url, html, status);
             pageDtoList.add(pageDto);
-            log.info("Parsing URL with address: " + url);
             var elements = doc.select("a");
             List<PageUrlParser> taskList = new ArrayList<>();
             for (Element el : elements) {
@@ -56,7 +55,7 @@ public class PageUrlParser extends RecursiveTask<List<PageDto>> {
 
             taskList.forEach(ForkJoinTask::join);
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("Ошибка парсинга - " + url);
             PageDto pageDto = new PageDto(url, "", 500);
             pageDtoList.add(pageDto);
         }
@@ -72,7 +71,7 @@ public class PageUrlParser extends RecursiveTask<List<PageDto>> {
                     .referrer("http://www.google.com")
                     .get();
         } catch (Exception e) {
-            log.error(e.getMessage());
+            log.error("Не удалось установить подключение с " + url);
         }
         return doc;
     }

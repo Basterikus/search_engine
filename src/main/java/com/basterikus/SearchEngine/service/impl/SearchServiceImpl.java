@@ -48,6 +48,7 @@ public class SearchServiceImpl implements SearchService {
 
     @Override
     public List<SearchDto> siteSearch(String searchText, String url, int offset, int limit) {
+        log.info("Получаем информацию по поиску \"" + searchText + "\" с сайта - " + url);
         var site = siteRepository.findByUrl(url);
         var elements = searchText.toLowerCase(Locale.ROOT).split("\\s+");
         var textLemmaList = getLemmaFromText(elements);

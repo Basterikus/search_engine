@@ -12,6 +12,7 @@ import com.basterikus.SearchEngine.repository.PageRepository;
 import com.basterikus.SearchEngine.repository.SiteRepository;
 import com.basterikus.SearchEngine.service.IndexService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -20,6 +21,7 @@ import java.util.concurrent.Executors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class IndexServiceImpl implements IndexService {
 
     private final IndexConfig indexConfig;
@@ -78,6 +80,7 @@ public class IndexServiceImpl implements IndexService {
     @Override
     public boolean stopIndexing() {
         if (isIndexingActive()) {
+            log.info("Останавливаем индексацию");
             executorService.shutdownNow();
             return true;
         } else {
